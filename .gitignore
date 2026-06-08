@@ -25,7 +25,7 @@ wheels/
 *.egg
 
 # uv
-uv.lock
+# uv.lock
 .python-version
 
 # Environment variables
@@ -50,7 +50,7 @@ records/
 *.ogg
 
 # Docker
-.dockerignore
+# .dockerignore
 
 # Logs
 *.log

@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+.uv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Claude/Skills
+.claude/
+.agents/
+skills-lock.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+# *.md
+# ROADMAP.md
+# CLAUDE.md
+
+# Frontend
+# frontend/
+# node_modules/
+
+# Records (temporary files)
+records/
+
+# # Environment
+# .env
+# .env.*
+
+# # Docker
+# Dockerfile
+# docker-compose.yml
+# .dockerignore
+
+# CI/CD
+# .github/
+# .gitlab-ci.yml
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
