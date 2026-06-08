@@ -1,5 +1,7 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
 import boto3
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
 class Settings(BaseSettings):
     # model_config = SettingsConfigDict(env_file="../.env")
     model_config = SettingsConfigDict(env_file=".env")
@@ -12,7 +14,9 @@ class Settings(BaseSettings):
     s3_bucket: str
     s3_endpoint: str
 
+
 settings = Settings()
+
 
 def get_s3_client():
     s3_client = boto3.client(
