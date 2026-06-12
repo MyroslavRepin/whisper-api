@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     s3_bucket: str
     s3_endpoint: str
 
+    tmp_file_location: str
+
 
 settings = Settings()
 
