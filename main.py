@@ -2,6 +2,7 @@ import logging
 import sys
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from faster_whisper import WhisperModel
 from loguru import logger
 
@@ -26,7 +27,9 @@ class InterceptHandler(logging.Handler):
             frame = frame.f_back
             depth += 1
 
-        logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
+        logger.opt(depth=depth, exception=record.exc_info).log(
+            level, record.getMessage()
+        )
 
 
 # Remove default loguru handler and add custom one
@@ -44,6 +47,17 @@ logging.getLogger("uvicorn.error").handlers = [InterceptHandler()]
 logging.getLogger("fastapi").handlers = [InterceptHandler()]
 
 app = FastAPI()
+
+origins = [
+    "http://localhost:5173",
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.on_event("startup")
@@ -63,4 +77,4 @@ async def root():
 
 
 # Include API v1 routes
-app.include_router(transcription_api, prefix="/v1")
+app.include_router(transcription_api, prefix="/api/v1")
