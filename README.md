@@ -1,28 +1,16 @@
 # Whisper API
 
-Audio transcription service using OpenAI Whisper with asynchronous job processing, object storage, and email delivery.
+Audio transcription service hosted on Raspberry Pi using OpenAI's Whisper model.
 
-## Architecture
+## Tech Stack
 
-### Backend
-- **FastAPI** - REST API server
-- **PostgreSQL** - Job tracking and persistence
-- **MinIO** - Object storage for audio files
-- **ARQ** - Asynchronous task queue for transcription jobs
-- **Whisper** - OpenAI's speech-to-text model (local inference)
-- **Mailgun** - Email delivery for transcription results
-
-### Frontend
-- **Vue.js** - User interface for file upload and job submission
-
-## MVP Flow
-
-1. **Vue form** - User enters email + selects audio file → clicks upload
-2. **Vue** does `POST /jobs/init` → FastAPI creates job in PostgreSQL (status: `pending`), generates presigned PUT URL from MinIO, returns `{job_id, upload_url}`
-3. **Vue** uploads file directly to MinIO via `upload_url` (PUT request)
-4. **Vue** does `POST /jobs/{job_id}/confirm` → FastAPI enqueues job to ARQ
-5. **ARQ worker** picks up job → downloads file from MinIO → runs Whisper locally → updates status in PostgreSQL
-6. **Post-transcription** → Mailgun sends transcription text to email → deletes file from MinIO → status: `done`
+- **FastAPI** - Python web framework
+- **Vue.js + Vite** - Frontend UI
+- **faster-whisper** - Local Whisper inference (optimized)
+- **S3-compatible storage** - Audio file storage (MinIO or similar)
+- **Resend** - Email delivery
+- **Docker Compose** - Single-container production deployment
+- **uv** - Python package manager
 
 ## Project Structure
 
@@ -30,32 +18,69 @@ Audio transcription service using OpenAI Whisper with asynchronous job processin
 whisper-api/
 ├── backend/
 │   ├── api/
-│   │   └── transcribe.py      # API routes
-│   ├── services/
-│   │   ├── transcribe.py      # Whisper transcription logic
-│   │   ├── email.py           # Email delivery
-│   │   └── s3.py              # MinIO/S3 integration
-│   ├── config.py              # Configuration management
-│   └── redis.py               # Redis client (for ARQ)
+│   │   └── v1/
+│   │       └── transcription.py   # API endpoints
+│   ├── core/
+│   │   ├── config.py              # Settings (Pydantic)
+│   │   └── redis.py               # Redis stub (unused)
+│   ├── deps/
+│   │   └── transcribe_api.py      # FastAPI dependencies
+│   └── services/
+│       ├── email.py               # Resend email service
+│       ├── storage.py             # S3 upload/download
+│       ├── transcription.py       # Whisper model inference
+│       └── workflow.py            # Orchestration logic
 ├── frontend/
-│   └── (Vue.js application)
-├── main.py                    # FastAPI application entry point
-└── pyproject.toml             # Python dependencies (uv)
+│   ├── src/
+│   │   ├── App.vue                # Main upload UI
+│   │   ├── components/            # Vue components
+│   │   └── main.js
+│   ├── .env.development           # Dev API URL
+│   ├── .env.production            # Prod API URL (relative path)
+│   └── vite.config.js
+├── main.py                        # FastAPI app + static file serving
+├── Dockerfile                     # Backend dev Dockerfile
+├── Dockerfile.production          # Multi-stage production build
+├── docker-compose.yml             # Production deployment
+└── pyproject.toml                 # Python dependencies (uv)
 ```
+
+## How It Works
+
+1. User uploads audio file via Vue frontend
+2. Backend receives file at `POST /api/v1/transcribe`
+3. File uploaded to S3-compatible storage
+4. Background task triggered:
+   - Downloads file from S3
+   - Transcribes using faster-whisper
+   - Sends transcript via Resend email
+   - Cleans up temporary file
+5. User receives email with transcription text
+
+## Prerequisites
+
+- **Docker + Docker Compose** (production)
+- **Node.js 20+** (development frontend)
+- **Python 3.14+** (development backend)
+- **uv** (install: `curl -LsSf https://astral.sh/uv/install.sh | sh`)
+- **S3-compatible storage** (MinIO, AWS S3, etc.)
+- **Resend API key** (email delivery)
 
 ## Development
 
-### Backend Setup
+Run backend and frontend separately with hot-reload:
+
+### Backend
 
 ```bash
 # Install dependencies
 uv sync
 
-# Run development server
+# Run dev server (port 8080)
 uv run uvicorn main:app --reload
 ```
 
-### Frontend Setup
+### Frontend
 
 ```bash
 cd frontend
@@ -63,52 +88,86 @@ cd frontend
 # Install dependencies
 npm install
 
-# Run development server
+# Run dev server (port 5173)
 npm run dev
-
-# Build for production
-npm run build
 ```
 
-## Configuration
+Frontend dev mode hits `http://localhost:8080/api/v1` (configured in `frontend/.env.development`).
 
-Create a `.env` file in the project root:
+## Production
+
+Single container serves built frontend + API on port 8080:
+
+```bash
+# Build and run
+docker compose up --build
+
+# Access at http://localhost:8080
+```
+
+Production build:
+1. Vite builds frontend to static files
+2. Static files copied into backend image
+3. FastAPI serves:
+   - API routes at `/api/v1/*`
+   - Static assets at `/assets/*`
+   - SPA fallback to `index.html` for client-side routing
+
+## Environment Variables
+
+### Backend (.env in project root)
 
 ```env
-# Email
-RESEND_API_KEY=your_resend_key
-# (Migrating to Mailgun)
+# Email delivery
+RESEND_API_KEY=re_xxxxx
 
-# Whisper
+# Whisper model size (tiny, base, small, medium, large)
 WHISPER_MODEL=tiny
 
-# MinIO/S3
-S3_USERNAME=your_username
+# S3-compatible storage
+S3_USERNAME=admin
 S3_PASSWORD=your_password
-S3_BUCKET=your_bucket
-S3_ENDPOINT=your_endpoint_url
+S3_BUCKET=whisper-audio
+S3_ENDPOINT=https://s3.example.com
 
-# PostgreSQL
-DATABASE_URL=postgresql://user:pass@localhost/whisper_api
-
-# Redis (for ARQ)
-REDIS_URL=redis://localhost:6379
+# Temp file location
+TMP_FILE_LOCATION=/tmp/
 ```
+
+### Frontend (Vite build-time variables)
+
+**`frontend/.env.development`** (local dev):
+```env
+VITE_API_URL=http://localhost:8080/api/v1
+```
+
+**`frontend/.env.production`** (Docker build):
+```env
+VITE_API_URL=/api/v1
+```
+
+Production uses relative path since frontend and API served from same origin.
 
 ## API Endpoints
 
-### Current (Legacy)
-- `POST /transcribe` - Direct upload and transcribe (synchronous)
+### POST /api/v1/transcribe
 
-### MVP (In Development)
-- `POST /jobs/init` - Initialize job, get presigned upload URL
-- `POST /jobs/{job_id}/confirm` - Confirm upload and start transcription
-- `GET /jobs/{job_id}` - Get job status (planned)
+Upload audio file for transcription.
 
-## Roadmap
+**Request:**
+- `audio_file` (multipart/form-data) - Audio file
 
-See [ROADMAP.md](ROADMAP.md) for detailed development plans and feature backlog.
+**Response:**
+```json
+{"status": "processing"}
+```
 
-## License
+Transcription runs asynchronously. Results sent via email when complete.
 
-[Add license information]
+## Notes
+
+- Hardcoded recipient: `myroslavrepin@gmail.com` (see `backend/services/workflow.py:36`)
+- No job status tracking (fire-and-forget)
+- No authentication/rate limiting
+- Whisper model loaded once at startup (change requires restart)
+- See `ROADMAP.md` for planned features (PostgreSQL, ARQ worker, presigned URLs)

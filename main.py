@@ -1,8 +1,11 @@
 import logging
 import sys
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from faster_whisper import WhisperModel
 from loguru import logger
 
@@ -48,9 +51,7 @@ logging.getLogger("fastapi").handlers = [InterceptHandler()]
 
 app = FastAPI()
 
-origins = [
-    "http://localhost:5173",
-]
+origins = ["*"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -71,10 +72,27 @@ async def load_model():
     logger.info("Whisper model loaded successfully")
 
 
-@app.get("/")
-async def root():
-    return {"message": "Hello, World!"}
-
-
-# Include API v1 routes
+# Include API v1 routes FIRST (before static files)
 app.include_router(transcription_api, prefix="/api/v1")
+
+# Serve static frontend files
+frontend_dist = Path(__file__).parent / "frontend" / "dist"
+if frontend_dist.exists():
+    # Mount static assets (js, css, etc) at /assets
+    assets_dir = frontend_dist / "assets"
+    if assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+    # Catch-all: serve SPA files with proper fallback
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        requested = frontend_dist / full_path
+        if requested.is_file():
+            return FileResponse(requested)
+        return FileResponse(frontend_dist / "index.html")
+else:
+    logger.warning(f"Frontend dist not found at {frontend_dist}")
+
+    @app.get("/")
+    async def root():
+        return {"message": "Hello, World!"}

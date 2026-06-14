@@ -1,3 +1,17 @@
+# Frontend build
+FROM node:22-slim AS frontend-builder
+
+WORKDIR /app/frontend
+
+COPY frontend/package*.json ./
+
+RUN npm install
+
+COPY frontend/ ./
+
+RUN npm run build
+
+# Backend built and deploy
 FROM python:3.14-slim
 
 RUN apt-get update && \
@@ -13,6 +27,7 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --no-dev
 
 COPY . .
+COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 
 EXPOSE 8080
 

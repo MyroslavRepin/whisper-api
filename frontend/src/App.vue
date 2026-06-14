@@ -22,8 +22,9 @@ async function sendFile() {
     formData.append("audio_file", file.value);
 
     try {
+        const apiUrl = import.meta.env.VITE_API_URL;
         const response = await axios.post(
-            "http://localhost:8080/api/v1/transcribe",
+            `${apiUrl}/transcribe`,
             formData,
             { headers: { "Content-Type": "multipart/form-data" } },
         );
