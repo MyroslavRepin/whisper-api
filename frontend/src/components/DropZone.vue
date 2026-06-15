@@ -18,6 +18,6 @@ function onSubmit() {
 <template>
     <div class="drop-zone">
         <input type="file" accept="audio/*" @change="onFileChange" />
-        <button @click="onSubmit">Отправить</button>
+        <button @click="onSubmit">Send</button>
     </div>
 </template>

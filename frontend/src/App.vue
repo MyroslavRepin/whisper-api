@@ -5,6 +5,7 @@ import TopBar from "./components/TopBar.vue";
 import DropZone from "./components/DropZone.vue";
 
 const file = ref(null);
+const to_email = ref(null);
 const transcriptionStatus = ref("No file selected");
 
 function handleFileSelected(recievedFile) {
@@ -20,14 +21,13 @@ async function sendFile() {
 
     const formData = new FormData();
     formData.append("audio_file", file.value);
+    formData.append("email", to_email.value);
 
     try {
         const apiUrl = import.meta.env.VITE_API_URL;
-        const response = await axios.post(
-            `${apiUrl}/transcribe`,
-            formData,
-            { headers: { "Content-Type": "multipart/form-data" } },
-        );
+        const response = await axios.post(`${apiUrl}/transcribe`, formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+        });
         transcriptionStatus.value = "Transcription in progress...";
         console.log("Success:", response.data);
     } catch (error) {
@@ -41,6 +41,11 @@ async function sendFile() {
         <div class="container">
             <!-- <TopBar /> -->
             <DropZone @file-selected="handleFileSelected" />
+            <input
+                v-model="to_email"
+                type="email"
+                placeholder="Enter email to send transcription"
+            />
             <button v-if="file" @click="sendFile">Send file</button>
             <p>Transcription status: {{ transcriptionStatus }}</p>
         </div>

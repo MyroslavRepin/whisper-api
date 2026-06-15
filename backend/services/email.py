@@ -10,8 +10,9 @@ class EmailService:
     DEFAULT_FROM = "Acme <whisper-api@myroslavrepin.com>"
     DEFAULT_TO = ["myroslavrepin@gmail.com"]
 
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str, to_email: str | None = None):
         self.api_key = api_key
+        self.to_email = to_email
         resend.api_key = self.api_key
 
     def send_email(

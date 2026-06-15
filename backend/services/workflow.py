@@ -20,7 +20,7 @@ class AudioTranscriptionWorkflow:
         self.email_service = email_service
         self.storage_service = storage_service
 
-    async def process_audio_file(self, file_key: str):
+    async def process_audio_file(self, file_key: str, to_email: str):
         """Orchestrate complete workflow: upload → transcribe → email → cleanup"""
         file_path = os.path.join(settings.tmp_file_location, file_key)
 
@@ -33,7 +33,7 @@ class AudioTranscriptionWorkflow:
         transcript_text = self.transcription_service.transcribe_audio(file_path)
 
         self.email_service.send_email(
-            to="myroslavrepin@gmail.com",
+            to=to_email,
             subject="Transcription completed!",
             text=transcript_text,
         )

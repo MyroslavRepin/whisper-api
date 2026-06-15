@@ -1,10 +1,14 @@
 import uuid
 
-from fastapi import APIRouter, BackgroundTasks, Depends, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, Form, UploadFile
 from loguru import logger
+from pydantic.networks import EmailStr
 
 from backend.core.config import settings
-from backend.deps.transcribe_api import get_transcription_service
+from backend.deps.transcribe_api import (
+    TranscriptionEmailSchema,
+    get_transcription_service,
+)
 from backend.services.email import EmailService
 from backend.services.storage import StorageService
 from backend.services.transcription import TranscriptionService, transcribe_workflow
@@ -19,8 +23,10 @@ storage_service = StorageService()
 async def transcribe_audio_api(
     audio_file: UploadFile,
     background_tasks: BackgroundTasks,
+    email: EmailStr = Form(...),
     transcription_service: TranscriptionService = Depends(get_transcription_service),
 ):
+    to_email = email
     file_key = f"temp_{uuid.uuid4()}_{audio_file.filename}"
     logger.info("Uploading file to S3")
     storage_service.upload_file(audio_file.file, settings.s3_bucket, file_key)
@@ -31,5 +37,7 @@ async def transcribe_audio_api(
         storage_service=storage_service,
     )
     logger.info("Transcription workflow started in background")
-    background_tasks.add_task(audio_workflow.process_audio_file, file_key=file_key)
+    background_tasks.add_task(
+        audio_workflow.process_audio_file, file_key=file_key, to_email=to_email
+    )
     return {"status", "processing"}
