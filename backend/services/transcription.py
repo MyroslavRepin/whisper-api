@@ -17,11 +17,18 @@ class TranscriptionService:
         try:
             logger.debug(f"Transcribing: {file_path}")
             segments, info = self.model.transcribe(file_path)
-            transcription_text = " ".join([segment.text for segment in segments])
+
+            out_path = file_path + ".txt"
+            char_count = 0
+            with open(out_path, "w", encoding="utf-8") as f:
+                for segment in segments:
+                    f.write(segment.text + " ")
+                    char_count += len(segment.text)
+
             logger.debug(
-                f"Transcription complete ({len(transcription_text)} chars, language: {info.language})"
+                f"Transcription complete ({char_count} chars, language: {info.language})"
             )
-            return transcription_text
+            return out_path
         except Exception as e:
             logger.error(f"Transcription failed for {file_path}: {e}")
             raise
