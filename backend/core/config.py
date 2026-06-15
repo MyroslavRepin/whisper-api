@@ -1,3 +1,5 @@
+import re
+
 import boto3
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -26,5 +28,6 @@ def get_s3_client():
         aws_access_key_id=settings.s3_username,
         aws_secret_access_key=settings.s3_password,
         endpoint_url=settings.s3_endpoint,
+        region_name="us-east-1",  # MinIO doesn't require a specific region, but boto3 needs one
     )
     return s3_client
