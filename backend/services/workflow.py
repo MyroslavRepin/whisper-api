@@ -30,12 +30,15 @@ class AudioTranscriptionWorkflow:
             download_path=file_path,
         )
         file_path = str(file_path)
-        transcript_text = self.transcription_service.transcribe_audio(file_path)
+        out_path = self.transcription_service.transcribe_audio(file_path)
+
+        with open(out_path, encoding="utf-8") as f:
+            transcription_text = f.read()
 
         self.email_service.send_email(
             to=to_email,
             subject="Transcription completed!",
-            text=transcript_text,
+            text=transcription_text,
         )
 
         os.remove(file_path)

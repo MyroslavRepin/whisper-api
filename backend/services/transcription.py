@@ -1,4 +1,5 @@
 import os
+import time
 
 from faster_whisper import WhisperModel
 from loguru import logger
@@ -16,6 +17,7 @@ class TranscriptionService:
     def transcribe_audio(self, file_path):
         try:
             logger.debug(f"Transcribing: {file_path}")
+            start = time.perf_counter()
             segments, info = self.model.transcribe(file_path)
 
             out_path = file_path + ".txt"
@@ -25,8 +27,9 @@ class TranscriptionService:
                     f.write(segment.text + " ")
                     char_count += len(segment.text)
 
+            elapsed = time.perf_counter() - start
             logger.debug(
-                f"Transcription complete ({char_count} chars, language: {info.language})"
+                f"Transcription complete for {file_path} in {elapsed:.2f} seconds, {char_count} characters transcribed"
             )
             return out_path
         except Exception as e:
