@@ -40,5 +40,5 @@ class AudioTranscriptionWorkflow:
 
         os.remove(file_path)
 
-        logger.info(f"Transcription completed and email sent for file: {file_key}")
+        logger.info(f"Transcription completed and email sent to {to_email}")
         return {"status": "success"}
