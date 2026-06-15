@@ -25,11 +25,14 @@ async def transcribe_audio_api(
     transcription_service: TranscriptionService = Depends(get_transcription_service),
 ):
     file_key = f"temp_{uuid.uuid4()}_{audio_file.filename}"
+    logger.info("Uploading file to S3")
     storage_service.upload_file(audio_file.file, settings.s3_bucket, file_key)
     audio_workflow = AudioTranscriptionWorkflow(
         transcription_service=transcription_service,
         email_service=EmailService(settings.resend_api_key),
         storage_service=storage_service,
     )
+    logger.info("Uploading file to S3 finished")
+    logger.info("Transcription started in background")
     background_tasks.add_task(audio_workflow.process_audio_file, file_key=file_key)
     return {"status", "processing"}
