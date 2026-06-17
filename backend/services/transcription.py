@@ -1,4 +1,5 @@
 import os
+import subprocess
 import time
 
 from faster_whisper import WhisperModel
@@ -35,6 +36,22 @@ class TranscriptionService:
         except Exception as e:
             logger.error(f"Transcription failed for {file_path}: {e}")
             raise
+
+    def get_duration(self, path: str) -> float:
+        out = subprocess.check_output(
+            [
+                "ffprobe",
+                "-v",
+                "error",
+                "-show_entries",
+                "format=duration",
+                "-of",
+                "csv=p=0",
+                path,
+            ],
+            text=True,
+        )
+        return float(out)
 
 
 def transcribe_workflow(

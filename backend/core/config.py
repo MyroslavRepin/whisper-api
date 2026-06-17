@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     s3_endpoint: str
 
     tmp_file_location: str
+    max_file_duration: int
 
 
 settings = Settings()
