@@ -3,10 +3,12 @@ import { ref } from "vue";
 import axios from "axios";
 import TopBar from "./components/TopBar.vue";
 import DropZone from "./components/DropZone.vue";
+import HeaderZone from "./components/HeaderZone.vue";
+import SubmitZone from "./components/SubmitZone.vue";
 
 const file = ref(null);
 const to_email = ref(null);
-const transcriptionStatus = ref("No file selected");
+const transcriptionStatus = ref("Waiting. Patiently. Mostly.");
 
 function handleFileSelected(recievedFile) {
     file.value = recievedFile;
@@ -23,15 +25,22 @@ async function sendFile() {
     formData.append("audio_file", file.value);
     formData.append("email", to_email.value);
 
+    console.log("Sending file:", file.value.name);
+    console.log("Sending email:", to_email.value);
+    console.log("FormData entries:", Array.from(formData.entries()));
+
     try {
         const apiUrl = import.meta.env.VITE_API_URL;
-        const response = await axios.post(`${apiUrl}/transcribe`, formData, {
-            headers: { "Content-Type": "multipart/form-data" },
-        });
-        transcriptionStatus.value = "Transcription in progress...";
+        const response = await axios.post(`${apiUrl}/transcribe`, formData);
+        transcriptionStatus.value =
+            "Heads up: this status bar is decorative. The real answer lands in ur inbox.";
         console.log("Success:", response.data);
     } catch (error) {
         console.error("Error:", error);
+        console.error("Response data:", error.response?.data);
+        console.error("Detail:", error.response?.data?.detail);
+        console.error("Response status:", error.response?.status);
+        transcriptionStatus.value = "Failed. Check console for details.";
     }
 }
 </script>
@@ -40,14 +49,23 @@ async function sendFile() {
     <div id="app">
         <div class="container">
             <!-- <TopBar /> -->
-            <DropZone @file-selected="handleFileSelected" />
-            <input
-                v-model="to_email"
-                type="email"
-                placeholder="Enter email to send transcription"
-            />
-            <button v-if="file" @click="sendFile">Send file</button>
-            <p>Transcription status: {{ transcriptionStatus }}</p>
+            <p class="title">whisper<span>●</span>api</p>
+            <div class="wrapper">
+                <HeaderZone />
+                <DropZone @file-selected="handleFileSelected" />
+                <SubmitZone
+                    v-model:email="to_email"
+                    :can-send="!!file"
+                    :status="transcriptionStatus"
+                    @send="sendFile"
+                />
+            </div>
+            <footer>
+                <p>
+                    <span>●</span> Powered by a Raspberry Pi and sheer
+                    stubbornness
+                </p>
+            </footer>
         </div>
     </div>
 </template>
@@ -57,11 +75,33 @@ async function sendFile() {
     background-color: var(--color-bg);
     display: flex;
     justify-content: center;
+    align-items: center;
+    font-family: "Anthropic Sans";
 }
 .container {
     max-width: 800px;
     width: 800px;
+    height: 100vh;
     margin: 0 auto;
     padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.title {
+    color: #141413;
+    font-weight: bold;
+}
+.wrapper {
+    display: flex;
+    fjustify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 20px;
+}
+footer {
+    text-align: center;
+    color: #141413;
+    /*font-family: "The Girl Next Door", cursive;*/
 }
 </style>

@@ -1,9 +1,14 @@
 /* src/assets/main.css */
+@import url("https://cdn.jsdelivr.net/gh/devchauhann/fonts@v1.1.0/cdn/v1/css/all.css");
+@import url("https://fonts.googleapis.com/css2?family=The+Girl+Next+Door&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Caveat&display=swap");
+
 :root {
     --color-primary: #6366f1;
     --color-bg: #f3efe4;
     --font-size-base: 16px;
     --radius: 8px;
+    --color-span: #f25c54;
 }
 * {
     margin: 0;
