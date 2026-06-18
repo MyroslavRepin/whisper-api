@@ -40,7 +40,17 @@ async function sendFile() {
         console.error("Response data:", error.response?.data);
         console.error("Detail:", error.response?.data?.detail);
         console.error("Response status:", error.response?.status);
-        transcriptionStatus.value = "Failed. Check console for details.";
+
+        let errorMsg = "Failed. Unknown error.";
+        if (error.response?.data?.detail) {
+            const detail = error.response.data.detail;
+            if (Array.isArray(detail)) {
+                errorMsg = detail.map(e => `${e.loc?.join('.')}: ${e.msg}`).join(', ');
+            } else if (typeof detail === 'string') {
+                errorMsg = detail;
+            }
+        }
+        transcriptionStatus.value = errorMsg;
     }
 }
 </script>

@@ -62,6 +62,7 @@ onMounted(() => {
             :height="HEIGHT"
         ></svg>
         <input type="file" accept="audio/*" @change="onFileChange" />
+        <p>File name: {{ file?.name || "No file selected" }}</p>
     </div>
 </template>
 
@@ -69,6 +70,8 @@ onMounted(() => {
 .drop-zone {
     display: flex;
     justify-content: center;
+    flex-direction: column;
+    align-items: center;
     position: relative;
 }
 
@@ -83,5 +86,9 @@ input[type="file"] {
     height: 100%;
     opacity: 0;
     cursor: pointer;
+}
+p {
+    font-family: "Caveat", cursive;
+    font-size: 20px;
 }
 </style>
