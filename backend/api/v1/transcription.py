@@ -47,7 +47,11 @@ async def transcribe_audio_api(
 
         if duration > settings.max_file_duration:
             raise HTTPException(
-                400, detail=f"Audio {duration / 60:.0f} min — limit 55 min"
+                400,
+                detail=(
+                    f"Audio {duration / 60:.0f} min - "
+                    f"limit {settings.max_file_duration / 60:.0f} min"
+                ),
             )
 
         to_email = email

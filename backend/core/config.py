@@ -17,7 +17,8 @@ class Settings(BaseSettings):
     s3_endpoint: str
 
     tmp_file_location: str
-    max_file_duration: int
+    max_file_duration: int = 3 * 60 * 60
+    transcription_chunk_seconds: int = 10 * 60
 
 
 settings = Settings()

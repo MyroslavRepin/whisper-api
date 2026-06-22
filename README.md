@@ -123,6 +123,8 @@ RESEND_API_KEY=re_xxxxx
 
 # Whisper model size (tiny, base, small, medium, large)
 WHISPER_MODEL=tiny
+MAX_FILE_DURATION=10800
+TRANSCRIPTION_CHUNK_SECONDS=600
 
 # S3-compatible storage
 S3_USERNAME=admin
@@ -156,13 +158,16 @@ Upload audio file for transcription.
 
 **Request:**
 - `audio_file` (multipart/form-data) - Audio file
+- `email` (multipart/form-data) - Recipient email address
 
 **Response:**
 ```json
 {"status": "processing"}
 ```
 
-Transcription runs asynchronously. Results sent via email when complete.
+Transcription runs asynchronously. Audio files up to 3 hours are accepted by default.
+Long files are split into 10-minute chunks on disk, transcribed sequentially, and joined
+into one email response to keep Raspberry Pi memory usage bounded.
 
 ## Notes
 
