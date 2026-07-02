@@ -20,7 +20,12 @@ class StorageService:
     def download_file(self, bucket_name: str, file_key: str, download_path: str):
         try:
             logger.debug(f"Downloading file from S3: bucket={bucket_name}, key={file_key}")
-            self.s3_client.download_file(bucket_name, file_key, download_path)
+            # get_object instead of download_file: download_file issues a
+            # HeadObject first, which returns 403 right after upload on our setup
+            response = self.s3_client.get_object(Bucket=bucket_name, Key=file_key)
+            with open(download_path, "wb") as f:
+                for chunk in response["Body"].iter_chunks(chunk_size=1024 * 1024):
+                    f.write(chunk)
             logger.debug(f"S3 download complete: {download_path}")
             return download_path
         except Exception as e:
