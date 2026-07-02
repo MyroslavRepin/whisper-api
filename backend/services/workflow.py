@@ -20,7 +20,10 @@ class AudioTranscriptionWorkflow:
         self.email_service = email_service
         self.storage_service = storage_service
 
-    async def process_audio_file(self, file_key: str, to_email: str):
+    # Sync on purpose: BackgroundTasks awaits coroutines on the event loop,
+    # so an async version blocks the whole server for the entire transcription.
+    # A sync function is run in Starlette's threadpool instead.
+    def process_audio_file(self, file_key: str, to_email: str):
         """Orchestrate complete workflow: upload → transcribe → email → cleanup"""
         file_path = os.path.join(settings.tmp_file_location, file_key)
         out_path = None

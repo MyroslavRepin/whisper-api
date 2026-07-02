@@ -4,6 +4,7 @@ import tempfile
 import uuid
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Form, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.exceptions import HTTPException
 from loguru import logger
 from pydantic.networks import EmailStr
@@ -41,7 +42,9 @@ async def transcribe_audio_api(
 
     try:
         try:
-            duration = transcription_service.get_duration(tmp_path)
+            duration = await run_in_threadpool(
+                transcription_service.get_duration, tmp_path
+            )
         except (subprocess.CalledProcessError, ValueError):
             raise HTTPException(400, "Unable to recognize audio")
 
@@ -58,7 +61,9 @@ async def transcribe_audio_api(
         file_key = f"temp_{uuid.uuid4()}_{audio_file.filename}"
         logger.info("Uploading file to S3")
         with open(tmp_path, "rb") as f:
-            storage_service.upload_file(f, settings.s3_bucket, file_key)
+            await run_in_threadpool(
+                storage_service.upload_file, f, settings.s3_bucket, file_key
+            )
         logger.info("Uploading file to S3 finished")
 
         audio_workflow = AudioTranscriptionWorkflow(
