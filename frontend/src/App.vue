@@ -9,15 +9,26 @@ import SubmitZone from "./components/SubmitZone.vue";
 const file = ref(null);
 const to_email = ref(null);
 const transcriptionStatus = ref("Waiting. Patiently. Mostly.");
+const statusType = ref("idle"); // idle | loading | success | error
+const sending = ref(false);
 
 function handleFileSelected(recievedFile) {
     file.value = recievedFile;
     console.log("File:", file.value);
 }
 
+function setStatus(type, message) {
+    statusType.value = type;
+    transcriptionStatus.value = message;
+}
+
 async function sendFile() {
     if (!file.value) {
-        console.error("No file selected");
+        setStatus("error", "Pick a file first. I can't transcribe vibes.");
+        return;
+    }
+    if (!to_email.value) {
+        setStatus("error", "No email, no transcript. Where do I send it?");
         return;
     }
 
@@ -25,32 +36,36 @@ async function sendFile() {
     formData.append("audio_file", file.value);
     formData.append("email", to_email.value);
 
-    console.log("Sending file:", file.value.name);
-    console.log("Sending email:", to_email.value);
-    console.log("FormData entries:", Array.from(formData.entries()));
+    sending.value = true;
+    setStatus("loading", "Uploading… the Pi is limbering up.");
 
     try {
         const apiUrl = import.meta.env.VITE_API_URL;
         const response = await axios.post(`${apiUrl}/transcribe`, formData);
-        transcriptionStatus.value =
-            "Heads up: this status bar is decorative. The real answer lands in ur inbox.";
+        setStatus(
+            "success",
+            "Got it! Transcribing in the background — the result lands in ur inbox.",
+        );
         console.log("Success:", response.data);
     } catch (error) {
-        console.error("Error:", error);
-        console.error("Response data:", error.response?.data);
-        console.error("Detail:", error.response?.data?.detail);
-        console.error("Response status:", error.response?.status);
+        console.error("Error:", error, error.response?.data);
 
-        let errorMsg = "Failed. Unknown error.";
-        if (error.response?.data?.detail) {
-            const detail = error.response.data.detail;
-            if (Array.isArray(detail)) {
-                errorMsg = detail.map(e => `${e.loc?.join('.')}: ${e.msg}`).join(', ');
-            } else if (typeof detail === 'string') {
-                errorMsg = detail;
-            }
+        let errorMsg = "Something broke. Unknown error.";
+        const detail = error.response?.data?.detail;
+        if (Array.isArray(detail)) {
+            errorMsg = detail
+                .map((e) => `${e.loc?.join(".")}: ${e.msg}`)
+                .join(", ");
+        } else if (typeof detail === "string") {
+            errorMsg = detail;
+        } else if (!error.response) {
+            errorMsg = "Can't reach the server. The Pi might be napping.";
+        } else {
+            errorMsg = `Server said ${error.response.status}. It wasn't a compliment.`;
         }
-        transcriptionStatus.value = errorMsg;
+        setStatus("error", errorMsg);
+    } finally {
+        sending.value = false;
     }
 }
 </script>
@@ -66,7 +81,9 @@ async function sendFile() {
                 <SubmitZone
                     v-model:email="to_email"
                     :can-send="!!file"
+                    :sending="sending"
                     :status="transcriptionStatus"
+                    :status-type="statusType"
                     @send="sendFile"
                 />
             </div>
