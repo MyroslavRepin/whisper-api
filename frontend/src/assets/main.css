@@ -1,13 +1,1 @@
 @import "./base.css";
-
-#app {
-    background-color: var(--color-bg);
-    height: 100vh;
-}
-span {
-    color: var(--color-span);
-}
-.span-italic {
-    font-style: italic;
-    color: #000000;
-}

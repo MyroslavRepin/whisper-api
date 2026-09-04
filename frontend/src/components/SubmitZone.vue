@@ -10,129 +10,111 @@ const emit = defineEmits(["send"]);
 </script>
 
 <template>
-    <main>
-        <div class="wrapper">
-            <div class="input-row">
+    <section>
+        <form class="row" @submit.prevent="emit('send')">
+            <label class="field">
+                <span class="field-label">Send transcript to</span>
                 <input
                     v-model="email"
                     type="email"
-                    placeholder="Where do I dump the results?"
+                    autocomplete="email"
+                    placeholder="you@example.com"
                     :disabled="sending"
                 />
-                <button
-                    v-if="canSend"
-                    :disabled="sending"
-                    @click="emit('send')"
-                >
-                    <span v-if="sending" class="spinner"></span>
-                    {{ sending ? "Sending…" : "Send file" }}
-                </button>
-            </div>
-            <p>
-                Transcription status:
-                <span class="status" :class="statusType">
-                    <span v-if="statusType === 'error'">✗ </span>
-                    <span v-else-if="statusType === 'success'">✓ </span>
-                    {{ status }}
-                </span>
-            </p>
-        </div>
-    </main>
+            </label>
+            <button type="submit" :disabled="sending || !canSend">
+                {{ sending ? "Uploading…" : "Transcribe" }}
+            </button>
+        </form>
+
+        <p class="status" :class="statusType">
+            <span class="status-label">Status</span>
+            <span>{{ status }}</span>
+        </p>
+    </section>
 </template>
 
 <style scoped>
-main {
+.row {
     display: flex;
-    flex-direction: column;
-    align-items: center;
+    align-items: flex-end;
     gap: 10px;
-    padding: 20px;
-    background-color: var(--color-secondary);
-    border-radius: 8px;
-    width: 100%;
 }
-.wrapper {
+.field {
+    flex: 1;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 15px;
-    width: 100%;
+    gap: 6px;
 }
-.input-row {
-    display: flex;
-    flex-direction: row;
-    gap: 12px;
-    width: 100%;
-    max-width: 400px;
-    align-items: stretch;
+.field-label {
+    font-size: 13px;
+    color: var(--color-muted);
 }
 input {
-    padding: 12px 16px;
-    border-radius: 8px;
-    border: 2px solid #e0e0e0;
-    flex: 1;
-    font-family: "The Girl Next Door", cursive;
-    font-size: 18px;
-    font-weight: 600;
-    transition: border-color 0.2s ease;
+    padding: 10px 12px;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius);
+    background: var(--color-surface);
+    font-size: 15px;
+    width: 100%;
 }
 input:focus {
     outline: none;
-    border-color: var(--color-span);
+    border-color: var(--color-accent);
 }
 input:disabled {
     opacity: 0.6;
 }
 button {
-    padding: 12px 24px;
-    border-radius: 8px;
-    border: none;
-    background-color: var(--color-span);
-    color: white;
-    font-family: "The Girl Next Door", cursive;
-    font-size: 18px;
-    font-weight: 600;
+    padding: 10px 18px;
+    border: 1px solid var(--color-fg);
+    border-radius: var(--radius);
+    background: var(--color-fg);
+    color: var(--color-bg);
+    font-size: 15px;
     cursor: pointer;
     white-space: nowrap;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
 }
 button:disabled {
-    opacity: 0.7;
-    cursor: wait;
+    background: transparent;
+    color: var(--color-muted);
+    border-color: var(--color-line);
+    cursor: not-allowed;
 }
-.spinner {
-    width: 16px;
-    height: 16px;
-    border: 2px solid rgba(255, 255, 255, 0.4);
-    border-top-color: white;
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
+.status {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--color-line);
+    display: flex;
+    gap: 12px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--color-muted);
 }
-@keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
+.status-label {
+    color: var(--color-muted);
+    min-width: 6ch;
 }
-
-p {
-    font-family: "Caveat", cursive;
-    font-size: 22px;
+.status.loading span:last-child::after {
+    content: "";
+    animation: dots 1.2s steps(4, end) infinite;
 }
-.status.loading {
-    color: #8a6d00;
-    animation: pulse 1.2s ease-in-out infinite;
+.status.success span:last-child {
+    color: var(--color-ok);
 }
-.status.success {
-    color: #2e7d32;
+.status.error span:last-child {
+    color: var(--color-accent);
 }
-.status.error {
-    color: #c0392b;
+@keyframes dots {
+    0% { content: ""; }
+    25% { content: "."; }
+    50% { content: ".."; }
+    75% { content: "..."; }
 }
-@keyframes pulse {
-    50% {
-        opacity: 0.5;
+@media (max-width: 520px) {
+    .row {
+        flex-direction: column;
+        align-items: stretch;
     }
 }
 </style>

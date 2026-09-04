@@ -1,94 +1,103 @@
 <script setup>
-import { ref, onMounted } from "vue";
-import rough from "roughjs";
+import { ref } from "vue";
 
 const emit = defineEmits(["file-selected"]);
 const file = ref(null);
-const svg = ref(null);
+const input = ref(null);
+const dragging = ref(false);
 
-const WIDTH = 400;
-const HEIGHT = 200;
-const SVG_NS = "http://www.w3.org/2000/svg";
-
-function onFileChange(event) {
-    const selected = event.target.files[0];
+function select(selected) {
     if (!selected) return;
     file.value = selected;
     emit("file-selected", selected);
 }
 
-function draw() {
-    const el = svg.value;
-    if (!el) return;
-
-    const rc = rough.svg(el);
-
-    const rect = rc.rectangle(10, 10, WIDTH - 20, HEIGHT - 20, {
-        roughness: 3,
-        stroke: "#000",
-        strokeWidth: 2,
-        fill: "#cccccc",
-        fillStyle: "hachure",
-        hachureGap: 8,
-        hachureAngle: -41,
-        fillWeight: 1,
-    });
-    el.appendChild(rect);
-
-    const text = document.createElementNS(SVG_NS, "text");
-    text.setAttribute("x", WIDTH / 2);
-    text.setAttribute("y", HEIGHT / 2);
-    text.setAttribute("text-anchor", "middle");
-    text.setAttribute("dominant-baseline", "middle");
-    text.setAttribute("fill", "#f25c54");
-    text.style.fontFamily = '"Anthropic Sans"';
-    text.style.fontSize = "44px";
-    text.style.fontWeight = "700";
-    text.textContent = "Drop ur audio";
-    el.appendChild(text);
+function onFileChange(event) {
+    select(event.target.files[0]);
 }
 
-onMounted(() => {
-    draw();
-});
+function onDrop(event) {
+    dragging.value = false;
+    select(event.dataTransfer?.files?.[0]);
+}
+
+function formatSize(bytes) {
+    const mb = bytes / (1024 * 1024);
+    return mb >= 1 ? `${mb.toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
 </script>
 
 <template>
-    <div class="drop-zone">
-        <svg
-            ref="svg"
-            :viewBox="`0 0 ${WIDTH} ${HEIGHT}`"
-            :width="WIDTH"
-            :height="HEIGHT"
-        ></svg>
-        <input type="file" accept="audio/*" @change="onFileChange" />
-        <p>File name: {{ file?.name || "No file selected" }}</p>
-    </div>
+    <section>
+        <div
+            class="drop"
+            :class="{ dragging, filled: !!file }"
+            @click="input.click()"
+            @dragover.prevent="dragging = true"
+            @dragleave="dragging = false"
+            @drop.prevent="onDrop"
+        >
+            <p class="label">Drop an audio file here, or click to browse</p>
+            <p class="hint">mp3, m4a, wav, ogg — up to 3 hours</p>
+            <input
+                ref="input"
+                type="file"
+                accept="audio/*"
+                @change="onFileChange"
+            />
+        </div>
+        <p class="selected">
+            <template v-if="file">
+                <span class="name">{{ file.name }}</span>
+                <span class="size">{{ formatSize(file.size) }}</span>
+            </template>
+            <template v-else>No file selected</template>
+        </p>
+    </section>
 </template>
 
 <style scoped>
-.drop-zone {
-    display: flex;
-    justify-content: center;
-    flex-direction: column;
-    align-items: center;
-    position: relative;
-}
-
-svg {
-    display: block;
-}
-
-input[type="file"] {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
+.drop {
+    border: 1px dashed var(--color-line);
+    border-radius: var(--radius);
+    background: var(--color-surface);
+    padding: 40px 24px;
+    text-align: center;
     cursor: pointer;
+    transition:
+        border-color 0.15s ease,
+        background-color 0.15s ease;
 }
-p {
-    font-family: "Caveat", cursive;
-    font-size: 20px;
+.drop:hover,
+.drop.dragging {
+    border-color: var(--color-accent);
+}
+.drop.filled {
+    border-style: solid;
+}
+.label {
+    font-size: 15px;
+}
+.hint {
+    margin-top: 4px;
+    color: var(--color-muted);
+    font-size: 13px;
+}
+input[type="file"] {
+    display: none;
+}
+.selected {
+    margin-top: 10px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--color-muted);
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+}
+.name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 </style>
