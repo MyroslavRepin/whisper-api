@@ -11,6 +11,7 @@ from loguru import logger
 
 from backend.api.v1.transcription import app as transcription_api
 from backend.core.config import settings
+from backend.core.errors import register_error_handlers
 
 
 # Configure loguru
@@ -51,6 +52,8 @@ logging.getLogger("uvicorn.error").handlers = [InterceptHandler()]
 logging.getLogger("fastapi").handlers = [InterceptHandler()]
 
 app = FastAPI()
+
+register_error_handlers(app)
 
 origins = ["*"]
 app.add_middleware(

@@ -1,5 +1,4 @@
 import base64
-import email
 from collections.abc import Sequence
 
 import resend
@@ -35,8 +34,16 @@ class EmailService:
             "subject": subject,
             "text": text,
         }
+        if html:
+            params["html"] = html
+        if attachments:
+            params["attachments"] = list(attachments)
 
-        return resend.Emails.send(params)
+        try:
+            return resend.Emails.send(params)
+        except Exception as exc:
+            logger.opt(exception=exc).error(f"Failed to send email to {to}")
+            raise
 
     def send_with_attachment(
         self,

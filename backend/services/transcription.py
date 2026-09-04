@@ -1,4 +1,3 @@
-import os
 import subprocess
 import tempfile
 import time
@@ -9,7 +8,6 @@ from faster_whisper import WhisperModel
 from loguru import logger
 
 from backend.core.config import settings
-from backend.services.email import EmailService
 
 
 class TranscriptionService:
@@ -135,29 +133,3 @@ class TranscriptionService:
             text=True,
         )
         return float(out)
-
-
-def transcribe_workflow(
-    transcription_service: TranscriptionService,
-    file_path: str,
-    email_service: EmailService,
-):
-    logger.info(f"Starting transcription workflow for {file_path}")
-    try:
-        transcription_text = transcription_service.transcribe_audio(file_path)
-        logger.debug("Text transcription complete")
-        os.remove(file_path)
-        # Todo: I might need delete file from S3
-
-        try:
-            logger.debug("Sending email with transcription")
-            email_service.send_mail(transcription_text)
-            logger.debug("Email sent successfully")
-        except Exception as e:
-            logger.error(f"Failed to send email: {e}")
-
-        logger.info(f"Workflow completed for {file_path}")
-    except Exception as e:
-        logger.error(f"Workflow failed for {file_path}: {e}")
-        if os.path.exists(file_path):
-            os.remove(file_path)
